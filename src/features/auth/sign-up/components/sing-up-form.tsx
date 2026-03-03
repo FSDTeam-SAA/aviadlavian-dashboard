@@ -11,31 +11,40 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
-const signUpSchema = z.object({
-  firstName: z.string().min(1, "Required"),
-  lastName: z.string().min(1, "Required"),
-  email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Too short"),
-});
+import { signUpSchema } from "../schema/signUpSchema";
+import Link from "next/link";
+import { useSignUp } from "../hooks/useSignUp";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 const SignUpForm = () => {
+  const router = useRouter();
+  const { mutate: signUp, isPending } = useSignUp();
+
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      FirstName: "",
+      LastName: "",
       email: "",
       password: "",
     },
   });
 
   function onSubmit(values: z.infer<typeof signUpSchema>) {
-    console.log(values);
+    signUp(values, {
+      onSuccess: () => {
+        toast.success("Account created successfully!");
+        router.push("/auth/sign-in");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to create account");
+      },
+    });
   }
 
   return (
@@ -60,7 +69,7 @@ const SignUpForm = () => {
             <div className="flex gap-4">
               <FormField
                 control={form.control}
-                name="firstName"
+                name="FirstName"
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <h4 className="text-[10px] text-[#f7f0e4] uppercase">
@@ -79,7 +88,7 @@ const SignUpForm = () => {
               />
               <FormField
                 control={form.control}
-                name="lastName"
+                name="LastName"
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <h4 className="text-[10px] text-[#f7f0e4] uppercase">
@@ -141,18 +150,32 @@ const SignUpForm = () => {
               )}
             />
 
-            <Button
-              type="submit"
-              className="w-full bg-[#0fb7a8] py-6 text-white hover:bg-[#0da396]"
-            >
-              Sign Up
-            </Button>
+            {isPending ? (
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full bg-[#0fb7a8] py-6 text-white hover:bg-[#0da396] disabled:cursor-not-allowed"
+              >
+                <Spinner /> Sign Up
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                className="w-full bg-[#0fb7a8] py-6 text-white hover:bg-[#0da396]"
+              >
+                Sign Up
+              </Button>
+            )}
           </form>
         </Form>
 
         <div className="mt-6 text-center text-sm">
           <span className="text-gray-400">Already have an account? </span>
-          <button className="text-[#0fb7a8] hover:underline">Sign In</button>
+          <Link href={"/auth/sign-in"}>
+            <button className="text-[#0fb7a8] hover:underline cursor-pointer">
+              Sign In
+            </button>
+          </Link>
         </div>
       </div>
     </div>
