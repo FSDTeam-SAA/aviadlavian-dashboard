@@ -14,6 +14,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { forgotPasswordSchema } from "../schema/forgotPasSchema";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
+
+type FormType = z.infer<typeof forgotPasswordSchema>;
 
 const ForgotPasswordForm = () => {
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
@@ -23,8 +28,44 @@ const ForgotPasswordForm = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof forgotPasswordSchema>) {
-    console.log(values);
+  const { mutateAsync, isPending } = useMutation({
+    mutationKey: ["forgot-password"],
+    mutationFn: async (payload: FormType) => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/user/forget-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Something went wrong");
+      }
+
+      return await data;
+    },
+
+    onSuccess: async (data) => {
+      toast.success(data?.message);
+    },
+
+    onError: async (error) => {
+      toast.error(error?.message);
+    },
+  });
+
+  async function onSubmit(payload: FormType) {
+    try {
+      await mutateAsync(payload);
+    } catch (error) {
+      console.log(`error : ${error}`);
+    }
   }
 
   return (
@@ -67,12 +108,22 @@ const ForgotPasswordForm = () => {
               )}
             />
 
-            <Button
-              type="submit"
-              className="w-full bg-[#0fb7a8] py-6 text-white hover:bg-[#0da396] mt-4"
-            >
-              Send Code
-            </Button>
+            {isPending ? (
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full bg-[#0fb7a8] py-6 text-white hover:bg-[#0da396] disabled:cursor-not-allowed mt-4"
+              >
+                <Spinner /> Send Code
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                className="w-full bg-[#0fb7a8] py-6 text-white hover:bg-[#0da396] mt-4"
+              >
+                Send Code
+              </Button>
+            )}
           </form>
         </Form>
       </div>
