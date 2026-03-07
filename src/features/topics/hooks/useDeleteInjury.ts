@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteInjury } from "../api/injury.api";
+import { toast } from "sonner";
 
 export const useDeleteInjury = () => {
   const queryClient = useQueryClient();
@@ -14,7 +15,7 @@ export const useDeleteInjury = () => {
     },
     onError: (error: Error) => {
       console.error("Failed to delete topic:", error);
-      alert(error.message || "Failed to delete topic");
+      toast.error(error.message || "Failed to delete topic");
     },
   });
 };

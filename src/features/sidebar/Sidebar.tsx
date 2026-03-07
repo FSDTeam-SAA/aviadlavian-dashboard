@@ -7,8 +7,6 @@ import {
   Home,
   Info,
   Library,
-  MessageSquare,
-  Settings,
   Sparkles,
   SquareKanban,
   X,
@@ -39,7 +37,7 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
   { label: "Dashboard", icon: Home, url: "/" },
   { label: "Topics", icon: Library, url: "/topics" },
-  { label: "Articles", icon: Info },
+  { label: "Articles", icon: Info, url: "/articles" },
   { label: "Question & Answer", icon: SquareKanban },
   { label: "Flashcards", icon: FileText },
   { label: "Users", icon: Sparkles, url: "/flashcards" },

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,24 +11,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import CSVFileModal from "./CSVFileModal";
-import { useCreateInjury } from "../hooks/useCreateInjury";
+import { useUpdateInjury } from "../hooks/useUpdateInjury";
+import { useInjury } from "../hooks/useInjury";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
-interface AddTopicModalProps {
+interface EditTopicModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  topicId: string | null;
 }
 
-const AddTopicModal: React.FC<AddTopicModalProps> = ({
+const EditTopicModal: React.FC<EditTopicModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
+  topicId,
 }) => {
-  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
-  const createInjuryMutation = useCreateInjury();
+  const { data, isLoading } = useInjury(topicId);
+  const updateInjuryMutation = useUpdateInjury();
 
   const [formData, setFormData] = useState({
     Id: "",
@@ -46,6 +45,29 @@ const AddTopicModal: React.FC<AddTopicModalProps> = ({
     Tags_Keywords: "",
   });
 
+  useEffect(() => {
+    if (data?.data && isOpen) {
+      const injury = data.data;
+      queueMicrotask(() => {
+        setFormData({
+          Id: injury.Id || "",
+          Name: injury.Name || "",
+          Primary_Body_Region: injury.Primary_Body_Region || "",
+          Secondary_Body_Region: injury.Secondary_Body_Region || "",
+          Acuity: injury.Acuity || "",
+          Age_Group: injury.Age_Group || "",
+          Tissue_Type: injury.Tissue_Type || "",
+          Etiology_Mechanism: injury.Etiology_Mechanism || "",
+          Common_Sports: injury.Common_Sports || "",
+          Synonyms_Abbreviations: injury.Synonyms_Abbreviations || "",
+          Importance_Level: injury.Importance_Level || "",
+          Description: injury.Description || "",
+          Tags_Keywords: injury.Tags_Keywords || "",
+        });
+      });
+    }
+  }, [data, isOpen]);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -56,83 +78,37 @@ const AddTopicModal: React.FC<AddTopicModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Log the form data for debugging
-    console.log("Submitting form data:", formData);
+    if (!topicId) return;
 
-    createInjuryMutation.mutate(formData, {
-      onSuccess: () => {
-        onSuccess();
-        onClose();
-        // Reset form
-        setFormData({
-          Id: "",
-          Name: "",
-          Primary_Body_Region: "",
-          Secondary_Body_Region: "",
-          Acuity: "",
-          Age_Group: "",
-          Tissue_Type: "",
-          Etiology_Mechanism: "",
-          Common_Sports: "",
-          Synonyms_Abbreviations: "",
-          Importance_Level: "",
-          Description: "",
-          Tags_Keywords: "",
-        });
+    updateInjuryMutation.mutate(
+      {
+        id: topicId,
+        payload: formData,
       },
-      onError: (error) => {
-        console.error("Mutation error:", error);
-
-        const apiError = error as {
-          response?: {
-            data?: {
-              data?: Array<{
-                field?: string;
-                message?: string;
-              }>;
-              message?: string;
-            };
-          };
-        };
-
-        const validationErrors = apiError.response?.data?.data;
-
-        if (validationErrors && validationErrors.length > 0) {
-          const errorMessages = validationErrors
-            .map(
-              (err) =>
-                `${err.field || "field"}: ${err.message || "Invalid value"}`,
-            )
-            .join(", ");
-          toast.error(`Validation failed: ${errorMessages}`);
-          return;
-        }
-
-        toast.error(
-          apiError.response?.data?.message || "Failed to create topic",
-        );
+      {
+        onSuccess: () => {
+          onClose();
+        },
       },
-    });
-  };
-
-  const handleOpenCSVModal = () => {
-    setIsCSVModalOpen(true);
-  };
-
-  const handleCSVSuccess = () => {
-    onSuccess();
-    onClose();
+    );
   };
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold">
-              Add Topic
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-center text-2xl font-bold">
+            Edit Topic
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading && (
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+          </div>
+        )}
+
+        {!isLoading && (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Two Column Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -357,45 +333,28 @@ const AddTopicModal: React.FC<AddTopicModalProps> = ({
               </div> */}
             </div>
 
-            {/* CSV Upload Option */}
-            <div className="text-center py-2">
-              <button
-                type="button"
-                onClick={handleOpenCSVModal}
-                className="text-teal-500 hover:text-teal-600 font-medium"
-              >
-                or Upload <span className="font-bold">CSV</span>
-              </button>
-            </div>
-
             {/* Submit Button */}
             <div className="flex justify-center">
               <Button
                 type="submit"
-                disabled={createInjuryMutation.isPending}
+                disabled={updateInjuryMutation.isPending}
                 className="bg-teal-500 hover:bg-teal-600 text-white px-8"
               >
-                {createInjuryMutation.isPending ? (
+                {updateInjuryMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    Updating...
                   </>
                 ) : (
-                  "+Add Topic"
+                  "Update Topic"
                 )}
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      <CSVFileModal
-        isOpen={isCSVModalOpen}
-        onClose={() => setIsCSVModalOpen(false)}
-        onSuccess={handleCSVSuccess}
-      />
-    </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default AddTopicModal;
+export default EditTopicModal;

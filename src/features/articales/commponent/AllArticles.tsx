@@ -4,55 +4,57 @@ import React, { useState } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import AddTopicModal from "../common/AddTopicModal";
-import ViewTopicModal from "../common/ViewTopicModal";
-import EditTopicModal from "../common/EditTopicModal";
-import { useInjuries } from "../hooks/useInjuries";
-import { useDeleteInjury } from "../hooks/useDeleteInjury";
+import AddArticleModal from "../common/AddArticleModal";
+import ViewArticleModal from "../common/ViewArticleModal";
+import EditArticleModal from "../common/EditArticleModal";
+import { useArticles } from "../hooks/useArticles";
+import { useDeleteArticle } from "../hooks/useDeleteArticle";
 import { toast } from "sonner";
 
-const AllTopics = () => {
+const AllArticles = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(
+    null,
+  );
 
   // Use TanStack Query hooks
-  const { data, isLoading, refetch } = useInjuries(currentPage, limit);
-  const deleteInjuryMutation = useDeleteInjury();
+  const { data, isLoading, refetch } = useArticles(currentPage, limit);
+  const deleteArticleMutation = useDeleteArticle();
 
-  const topics = data?.data || [];
+  const articles = data?.data || [];
   const totalPages = data?.meta.pages || 1;
   const total = data?.meta.total || 0;
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this topic?")) {
-      deleteInjuryMutation.mutate(id, {
+    if (confirm("Are you sure you want to delete this article?")) {
+      deleteArticleMutation.mutate(id, {
         onSuccess: () => {
-          toast.success("Topic deleted successfully!");
+          toast.success("Article deleted successfully!");
         },
         onError: () => {
-          toast.error("Failed to delete topic");
+          toast.error("Failed to delete article");
         },
       });
     }
   };
 
-  const handleView = (topicId: string) => {
-    setSelectedTopicId(topicId);
+  const handleView = (articleId: string) => {
+    setSelectedArticleId(articleId);
     setIsViewModalOpen(true);
   };
 
-  const handleEdit = (topicId: string) => {
-    setSelectedTopicId(topicId);
+  const handleEdit = (articleId: string) => {
+    setSelectedArticleId(articleId);
     setIsEditModalOpen(true);
   };
 
-  const renderPageNumbers = () => {
-    const pages = [];
+  const renderPageNumbers = (): (number | string)[] => {
+    const pages: (number | string)[] = [];
     const maxVisible = 5;
 
     if (totalPages <= maxVisible) {
@@ -92,36 +94,39 @@ const AllTopics = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Topics
+            Articles
           </h1>
         </div>
 
-        {/* Topic Name and Add Button */}
+        {/* Article Name and Add Button */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100">
-            Topic Name
+            Article Name
           </h2>
           <Button
             onClick={() => setIsAddModalOpen(true)}
             className="bg-teal-500 hover:bg-teal-600 text-white"
           >
-            +Add Topic
+            +Add Article
           </Button>
         </div>
 
-        {/* All Topics Section */}
+        {/* All Articles Section */}
         <div className="mb-4">
           <h3 className="text-base font-medium text-slate-900 dark:text-slate-100">
-            All Topics
+            All Articles
           </h3>
         </div>
 
-        {/* Topics Table */}
+        {/* Articles Table */}
         <div className="rounded-lg bg-white shadow dark:bg-slate-900">
           {/* Table Header */}
-          <div className="grid grid-cols-2 border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800">
+          <div className="grid grid-cols-3 border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800">
             <div className="text-center font-semibold text-slate-900 dark:text-slate-100">
-              Topic Name
+              Article Name
+            </div>
+            <div className="text-center font-semibold text-slate-900 dark:text-slate-100">
+              Article ID
             </div>
             <div className="text-center font-semibold text-slate-900 dark:text-slate-100">
               Action
@@ -133,9 +138,12 @@ const AllTopics = () => {
             {isLoading ? (
               // Loading Skeleton
               Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="grid grid-cols-2 px-6 py-4">
+                <div key={index} className="grid grid-cols-3 px-6 py-4">
                   <div className="flex items-center">
                     <Skeleton className="h-5 w-3/4" />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <Skeleton className="h-5 w-1/2" />
                   </div>
                   <div className="flex items-center justify-center gap-4">
                     <Skeleton className="h-8 w-8 rounded" />
@@ -144,42 +152,50 @@ const AllTopics = () => {
                   </div>
                 </div>
               ))
-            ) : topics.length === 0 ? (
+            ) : articles.length === 0 ? (
               <div className="px-6 py-8 text-center text-slate-500">
-                No topics found
+                No articles found
               </div>
             ) : (
-              topics.map((topic) => (
+              articles.map((article) => (
                 <div
-                  key={topic._id}
-                  className="grid grid-cols-2 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  key={article._id}
+                  className="grid grid-cols-3 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  {/* Topic Name */}
-                  <div className="flex items-center text-slate-900 dark:text-slate-100">
-                    {topic.Name}
+                  {/* Article Name */}
+                  <div
+                    className="flex items-center text-slate-900 dark:text-slate-100 prose dark:prose-invert prose-sm max-w-none line-clamp-2"
+                    dangerouslySetInnerHTML={{
+                      __html: article?.description || "",
+                    }}
+                  />
+
+                  {/* Article ID */}
+                  <div className="flex items-center justify-center text-slate-900 dark:text-slate-100">
+                    {article?.name || "N/A"}
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center justify-center gap-4">
                     <button
-                      onClick={() => handleView(topic._id)}
+                      onClick={() => handleView(article._id)}
                       className="text-teal-500 hover:text-teal-600 transition-colors"
                       title="View"
                     >
                       <Eye className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => handleEdit(topic._id)}
+                      onClick={() => handleEdit(article._id)}
                       className="text-teal-500 hover:text-teal-600 transition-colors"
                       title="Edit"
                     >
                       <Pencil className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(topic._id)}
+                      onClick={() => handleDelete(article._id)}
                       className="text-red-500 hover:text-red-600 transition-colors"
                       title="Delete"
-                      disabled={deleteInjuryMutation.isPending}
+                      disabled={deleteArticleMutation.isPending}
                     >
                       <Trash2 className="h-5 w-5" />
                     </button>
@@ -191,7 +207,7 @@ const AllTopics = () => {
         </div>
 
         {/* Pagination */}
-        {!isLoading && topics.length > 0 && (
+        {!isLoading && articles.length > 0 && (
           <div className="mt-6 flex items-center justify-center gap-2">
             <Button
               variant="ghost"
@@ -236,42 +252,42 @@ const AllTopics = () => {
         )}
 
         {/* Total Count */}
-        {!isLoading && topics.length > 0 && (
+        {!isLoading && articles.length > 0 && (
           <div className="mt-4 text-center text-sm text-slate-600 dark:text-slate-400">
             Showing {(currentPage - 1) * limit + 1} to{" "}
-            {Math.min(currentPage * limit, total)} of {total} topics
+            {Math.min(currentPage * limit, total)} of {total} articles
           </div>
         )}
       </div>
 
-      {/* Add Topic Modal */}
-      <AddTopicModal
+      {/* Add Article Modal */}
+      <AddArticleModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={() => refetch()}
       />
 
-      {/* View Topic Modal */}
-      <ViewTopicModal
+      {/* View Article Modal */}
+      <ViewArticleModal
         isOpen={isViewModalOpen}
         onClose={() => {
           setIsViewModalOpen(false);
-          setSelectedTopicId(null);
+          setSelectedArticleId(null);
         }}
-        topicId={selectedTopicId}
+        articleId={selectedArticleId}
       />
 
-      {/* Edit Topic Modal */}
-      <EditTopicModal
+      {/* Edit Article Modal */}
+      <EditArticleModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
-          setSelectedTopicId(null);
+          setSelectedArticleId(null);
         }}
-        topicId={selectedTopicId}
+        articleId={selectedArticleId}
       />
     </section>
   );
 };
 
-export default AllTopics;
+export default AllArticles;

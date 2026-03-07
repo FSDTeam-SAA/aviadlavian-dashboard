@@ -14,8 +14,6 @@ export interface CreateInjuryPayload {
   Importance_Level: string;
   Description?: string;
   Tags_Keywords?: string;
-  Video_URL?: File | null;
-  Image_URL?: File | null;
 }
 
 export interface CreateInjuryResponse {
@@ -63,13 +61,13 @@ export const createInjury = async (
     }
   });
 
-  if (payload.Video_URL instanceof File) {
-    formData.append("Video_URL", payload.Video_URL);
-  }
+  //   if (payload.Video_URL instanceof File) {
+  //     formData.append("Video_URL", payload.Video_URL);
+  //   }
 
-  if (payload.Image_URL instanceof File) {
-    formData.append("Image_URL", payload.Image_URL);
-  }
+  //   if (payload.Image_URL instanceof File) {
+  //     formData.append("Image_URL", payload.Image_URL);
+  //   }
 
   const response = await api.post<CreateInjuryResponse>(
     "/injury/create",
